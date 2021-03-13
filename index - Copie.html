@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>Bootstrap Example</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+		
+		<style>
+			li {
+			 color: blue;
+			}
+		</style>
+		
+		
+		<script>
+			// quelques variables globales
+			var theArtistSelected ;
+			var artistId ;
+			var albumId ;
+			
+			$(function()
+			{
+				// on charge le contenu du fichier "dialog.html"
+				//$("#includedDialogFile").load("dialog.html");
+				
+				/*************************************************************************/
+				/***************** PARTIE ARTISTE **********************/
+				/*************************************************************************/
+				
+				// on récupère la liste des artistes
+				loadArtists() ;
+				
+				// on ajoute un nouvel artiste
+				$(document).on('click', "#createArtist", function()
+				{
+					artistName = $("#artistName").val();
+					realName = $("#realName").val();
+					var artistInfo = {
+						"artistName": artistName,
+						"realName" : realName
+					};
+					$.ajax({
+						type : "POST",
+						url : "php/createArtiste.php",
+						data : JSON.stringify(artistInfo) ,
+						success : function(response){ loadArtists(); alert(response.message); },
+						error : function(resultat, statut, erreur){ },
+						complete : function(resultat, statut){ }
+					});
+				});
+				
+				// Si on veut modifier les données d'un artiste
+				$(document).on('click', "#artistUpdate",function(event)
+				{
+					artisteId = $(this).attr("ident");
+					loadArtist(artisteId);
+				});
+				
+				// on met à jour un artiste
+				$(document).on('click', "#updateArtist", function()
+				{
+					artistName = $("#artistNameUpdate").val();
+					realName = $("#realNameUpdate").val();
+					var artistInfo = {
+						"id" : artisteId,
+						"artistName" : artistName,
+						"realName" : realName
+					};
+					$.ajax({
+						type : "POST",
+						url : "php/updateArtiste.php",
+						data : JSON.stringify(artistInfo) ,
+						success : function(response){ loadArtists(); alert(response.message); },
+						error : function(resultat, statut, erreur){ },
+					});
+				});
+				
+				// lors d'un clic sur un artiste, on charge la liste de ses albums
+				$(document).on('click', "#artistList .btn-primary", function() {
+					theArtistSelected = $(this); // on mémorise l'artiste selectionné
+					loadAlbums();
+				});
+				
+				// Si on veut supprimer un artiste
+				$(document).on('click', "#deleteArtiste",function(event) {
+					artisteId = $(this).attr("ident"); // lors d'un clic sur la poubelle
+				});
+				
+				// Si on veut modifier les données d'un artiste
+				$(document).on('click', "#deleteArtist",function(event)
+				{
+					var artistInfo = {
+						"id": artisteId, // récupéré lors du clic sur la poubelle
+					};
+					$.ajax({
+						type : "POST",
+						url : "php/deleteArtiste.php",
+						data : JSON.stringify(artistInfo) ,
+						success : function(response){ loadArtists(); alert(response.message); },
+						error : function(resultat, statut, erreur){ },
+					});
+				});
+				
+				/*************************************************************************/
+				/***************** PARTIE ALBUM **********************/
+				/*************************************************************************/
+				
+				// on cache le bouton d'ajout d'un album (le temps de sélectionner un artiste)
+				$("#albumButton").hide() ;
+				
+				// on ajoute un nouvel album à un artiste
+				$(document).on('click', "#createAlbum", function()
+				{
+					title = $("#title").val();
+					year = $("#year").val();
+					artisteId = theArtistSelected.attr("ident");
+					var artistInfo = {
+						"Titre" : title,
+						"Parution" : parseInt(year),
+						"FkArtiste" : artisteId
+					};
+					$.ajax({
+						type : "POST",
+						url : "php/createAlbum.php",
+						data : JSON.stringify(artistInfo) ,
+						success : function(response){ loadAlbums(); alert(response.message); },
+						error : function(resultat, statut, erreur){ },
+						complete: function(resultat, statut){ }
+					});
+				});
+				
+				// Si on veut modifier les données d'un artiste
+				$(document).on('click', "#updateAlbum",function(event)
+				{
+				
+				});
+			});
+	</head>	
+	<body>
+		<!-- /******************************************************
+							ARTISTES
+		******************************************************/ -->
+
+		<!-- The Modal artist Create-->
+		<div class="modal fade" id="myModalArtist">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<!-- Modal Header -->
+					<div class="modal-header">
+						<h4 class="modal-title">artist create</h4>
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<!-- Modal body -->
+					<div class="modal-body">
+						<form>
+							<div class="input-group mb-3 input-group-sm">
+								<div class="input-group-prepend">
+									<span class="input-group-text" >artist name</span>
+								</div>
+								<input type="text" id="artistName" class="formcontrol">
+							</div>
+						</form>
+						<form>
+							<div class="input-group mb-3 input-group-sm">
+								<div class="input-group-prepend">
+									<span class="input-group-text" >real name </span>
+								</div>
+								<input type="text" id="realName" class="form-control">
+							</div>
+						</form>
+					</div>
+					<!-- Modal footer -->
+					<div class="modal-footer">
+						<button type="button" id="createArtist" class="btn btn-primary" data-dismiss="modal">Save</button>
+						<button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- The Modal artist Update-->
+		<div class="modal fade" id="myModalArtistUpdate">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<!-- Modal Header -->
+					<div class="modal-header">
+						<h4 class="modal-title">artist update</h4>
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<!-- Modal body -->
+					<div class="modal-body">
+						<form>
+							<div class="input-group mb-3 input-group-sm">
+								<div class="input-group-prepend">
+									<span class="input-group-text" >artist name</span>
+								</div>
+								<input type="text" id="artistNameUpdate" class="formcontrol">
+							</div>
+						</form>
+						<form>
+							<div class="input-group mb-3 input-group-sm">
+								<div class="input-group-prepend">
+									<span class="input-group-text" >real name </span>
+								</div>
+								<input type="text" id="realNameUpdate" class="formcontrol">
+							</div>
+						</form>
+					</div>
+					<!-- Modal footer -->
+					<div class="modal-footer">
+						<button type="button" id="updateArtist" class="btn btn-primary" data-dismiss="modal">Save</button>
+						<button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- The Modal artist delete-->
+		<div class="modal fade" id="myModalArtistDelete">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<!-- Modal Header -->
+					<div class="modal-header">
+						<h4 class="modal-title">artist delete</h4>
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<!-- Modal body -->
+					<!-- Modal footer -->
+					<div class="modal-footer">
+						<button type="button" id="deleteArtist" class="btn btn-primary" data-dismiss="modal">Delete</button>
+						<button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- /******************************************************
+							ALBUMS -->
+		<!-- ******************************************************/ -->
+
+		<!-- The Modal album Create-->
+		<div class="modal fade" id="myModalAlbum">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<!-- Modal Header -->
+					<div class="modal-header">
+						<h4 class="modal-title">album create</h4>
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<!-- Modal body -->
+					<div class="modal-body">
+						<form>
+							<div class="input-group mb-3 input-group-sm">
+								<div class="input-group-prepend">
+									<span class="input-group-text" >title name </span>
+								</div>
+								<input type="text" id="title" class="form-control" >
+							</div>
+						</form>
+						<form>
+							<div class="input-group mb-3 input-group-sm">
+								<div class="input-group-prepend">
+									<span class="input-group-text required number" >year parution </span>
+								</div>
+								<input type="text" id="year" class="form-control">
+							</div>
+						</form>
+					</div>
+					<!-- Modal footer -->
+					<div class="modal-footer">
+						<button type="button" id="createAlbum" class="btn btn-primary" data-dismiss="modal">Save</button>
+						<button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- The Modal album Update-->
+		<div class="modal fade" id="myModalAlbumUpdate">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<!-- Modal Header -->
+					<div class="modal-header">
+						<h4 class="modal-title">album update</h4>
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<!-- Modal body -->
+					<div class="modal-body">
+						<form>
+							<div class="input-group mb-3 input-group-sm">
+								<div class="input-group-prepend">
+									<span class="input-group-text" >title name</span>
+								</div>
+								<input type="text" id="albumNameUpdate" class="formcontrol">
+							</div>
+						</form>
+						<form>
+							<div class="input-group mb-3 input-group-sm">
+								<div class="input-group-prepend">
+									<span class="input-group-text" >year parution </span>
+								</div>
+								<input type="text" id="albumYearUpdate" class="formcontrol">
+							</div>
+						</form>
+					</div>
+					<!-- Modal footer -->
+					<div class="modal-footer">
+						<button type="button" id="updateAlbum" class="btn btn-primary" data-dismiss="modal">Save</button>
+						<button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- The Modal album delete-->
+		<div class="modal fade" id="myModalAlbumDelete">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<!-- Modal Header -->
+					<div class="modal-header">
+						<h4 class="modal-title">album delete</h4>
+						<button type="button" class="close" data-dismiss="modal">&times;</button>
+					</div>
+					<!-- Modal body -->
+					<!-- Modal footer -->
+					<div class="modal-footer">
+						<button type="button" id="deleteAlbum" class="btn btn-primary" data-dismiss="modal">Delete</button>
+						<button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>

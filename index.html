@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		  <title>Bootstrap Example</title>
+		 <meta charset="utf-8">
+		 <meta name="viewport" content="width=device-width, initial-scale=1">
+		 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.7.0/css/all.css" integrity="sha384-lZN37f5QGtY3VHgisS14W3ExzMWZxybE1SJSEsQp9S+oqd12jhcu+A56Ebc1zFSJ" crossorigin="anonymous">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+		<style>
+			li {
+				color: blue;
+			}
+		</style>
+		 <script>
+			// quelques variables globales
+			var theArtistSelected ;
+			var artistId ;
+			var albumId ;
+			
+			$(function()
+			{
+			
+				// on cache le bouton d'ajout d'un album (le temps de sélectionner un artiste)
+				$("#albumButton").hide() ;
+				
+				// on charge le contenu du fichier "dialog.html"
+				$("#includedDialogFile").load("dialog.html");
+				
+				/*************************************************************************/
+						/***************** PARTIE ARTISTE **********************/
+				/*************************************************************************/
+				
+				// on récupère la liste des artistes
+				loadArtists() ;
+				
+				// on ajoute un nouvel artiste
+				$(document).on('click', "#createArtist", function()
+				{
+					artistName = $("#artistName").val();
+					realName = $("#realName").val();
+					var artistInfo = {
+						"artistName": artistName,
+						"realName" : realName
+					};
+
+					$.ajax({
+						type : "POST",
+						url : "php/createArtiste.php",
+						data : JSON.stringify(artistInfo) ,
+						success : function(response){ loadArtists(); alert(response.message); },
+						error : function(resultat, statut, erreur){ },
+						complete : function(resultat, statut){ }
+					});
+				});
+				
+				// Si on veut modifier les données d'un artiste
+				$(document).on('click', "#artistUpdate",function(event)
+				{
+					artisteId = $(this).attr("ident");
+					loadArtists(artisteId);
+				});
+
+				// on met à jour un artiste
+				$(document).on('click', "#updateArtist", function()
+				{
+					loadArtists(artisteId);
+					artistName = $("#artistNameUpdate").val();
+					realName = $("#realNameUpdate").val();
+					var artistInfo = {
+						"id" : artisteId,
+						"artistName" : artistName,
+						"realName" : realName
+					};
+					$.ajax({
+						type : "POST",
+						url : "php/updateArtiste.php",
+						data : JSON.stringify(artistInfo) ,
+						success : function(response){ loadArtists(); alert(response.message); },
+						error : function(resultat, statut, erreur){ },
+					});
+				});
+				
+				// lors d'un clic sur un artiste, on charge la liste de ses albums
+				$(document).on('click', "#artistList .btn-primary", function() {
+					theArtistSelected = $(this); // on mémorise l'artiste selectionné
+					loadAlbums();
+				});
+				
+				// Si on veut supprimer un artiste
+				$(document).on('click', "#artistDelete",function(event) {
+					artisteId = $(this).attr("ident"); // lors d'un clic sur la poubelle
+				});
+				
+				$(document).on('click', "#deleteArtist",function(event)
+				{
+					var artistInfo = {
+						"id": artisteId, // récupéré lors du clic sur la poubelle
+					};
+					$.ajax({
+						type : "POST",
+						url : "php/deleteArtiste.php",
+						data : JSON.stringify(artistInfo) ,
+						success : function(response){ loadArtists(); alert(response.message); },
+						error : function(resultat, statut, erreur){ },
+					});
+				});
+				
+				/*************************************************************************/
+							/***************** PARTIE ALBUM **********************/
+				/*************************************************************************/
+				
+				$(document).on('click', "#createAlbum", function()
+				{				
+					title = $("#title").val();
+					year = $("#year").val();
+					artisteId = theArtistSelected.attr("ident");
+					var albumInfo = {
+						"Titre" : title,
+						"Parution" : parseInt(year),
+						"FkArtiste" : artisteId
+					};
+					$.ajax({
+						type : "POST",
+						url : "php/createAlbum.php",
+						data : JSON.stringify(artistInfo) ,
+						success : function(response){ loadAlbums(); alert(response.message); },
+						error : function(resultat, statut, erreur){ },
+						complete: function(resultat, statut){ }
+					});
+				});
+				
+				// Si on veut modifier les données d'un album
+				$(document).on('click', "#albumUpdate",function(event)
+				{
+					albumId = $(this).attr("ident");
+					loadAlbums(albumId);
+				});
+
+				// on met à jour un album
+				$(document).on('click', "#updateAlbum", function()
+				{
+					loadAlbums(albumId);
+					title = $("#albumNameUpdate").val();
+					year = $("#albumYearUpdate").val();
+					artisteId = theArtistSelected.attr("ident");
+					var albumInfo = {
+						"Titre" : title,
+						"Parution" : parseInt(year),
+						"FkArtiste" : artisteId
+					};
+					$.ajax({
+						type : "POST",
+						url : "php/updateAlbum.php",
+						data : JSON.stringify(albumInfo) ,
+						success : function(response){ loadAlbums(); alert(response.message); },
+						error : function(resultat, statut, erreur){ },
+					});
+				});
+				
+				// Si on veut supprimer un album
+				$(document).on('click', "#albumDelete",function(event) {
+					albumId = $(this).attr("ident"); // lors d'un clic sur la poubelle
+				});
+				
+				$(document).on('click', "#deleteAlbum",function(event)
+				{
+					var albumInfo = {
+						"id": albumId, // récupéré lors du clic sur la poubelle
+					};
+					$.ajax({
+						type : "POST",
+						url : "php/deleteAlbum.php",
+						data : JSON.stringify(albumInfo) ,
+						success : function(response){ loadArtists(); alert(response.message); },
+						error : function(resultat, statut, erreur){ },
+					});
+				});
+				
+				$(document).on('click', "#artistList .btn", function()
+				{
+					id = ($(this).attr("ident")) ; // id de l'artiste
+					artistName = $(this).text() ; // nom d'artiste de l'artiste
+					$("#albums").text ("Liste des albums de "+artistName) ;
+					$("#albumButton").show() ;
+					theArtistSelected = $(this);
+					//alert(id);
+					$.ajax({
+						type : "GET" ,
+						url : "php/readAlbumOfArtist.php" ,
+						data : {"id": id} ,
+						success : albumSuccess ,
+						error : function(resultat, statut, erreur){ } ,
+						complete : function(resultat, statut){ }
+					});
+				});
+			});
+			
+			function loadArtists()
+			{
+				artisteId = $(this).attr("ident");
+				$.ajax({
+					type : "GET",
+					url : "php/readArtiste.php",
+					success : artistSuccess,
+					error : function(resultat, statut, erreur){ },
+					complete : function(resultat, statut){ }
+				});
+			}
+
+			function artistSuccess(jsonDatas) {
+				var dropDownList="" ;
+				 $.each( jsonDatas, function( key1, value1 )
+				{
+					$.each( value1, function( key2, value2 )
+					{
+						if(key2=="id")
+							id = value2;
+						if(key2=="artistName")
+							dropDownList+= '<tr><td><button type="button" class="btn btn-primary" ident='+id+'>'+value2+'</button></td><td><button type="button" class="btn btn-success" data-toggle="modal" data-target="#myModalArtistUpdate"><i class="fas fa-user-edit"></i></button></td><td><button type="button" class="btn btn-danger" data-toggle="modal" data-target="#myModalArtistDelete"><i class="fas fa-trash-alt"></i></button></td></tr>';
+					});
+				});
+				$("#artistList").html(dropDownList);
+			}
+			
+			function loadAlbums()
+			{
+				albumId = $(this).attr("ident");
+				$.ajax({
+					type : "GET",
+					url : "php/readAlbum.php",
+					success : albumSuccess,
+					error : function(resultat, statut, erreur){ },
+					complete : function(resultat, statut){ }
+				});
+			}
+			
+			function albumSuccess(jsonDatas){			
+				var dropDownList="" ;
+				 $.each( jsonDatas, function( key1, value1 )
+				{
+					$.each( value1, function( key2, value2 )
+					{
+						if(key2=="Titre") // on mémorise le titre
+							Titre = value2;
+						if(key2=="Parution") // on a accès à l'année de parution
+							dropDownList+= '<tr><td><li class="list-group-item d-flex justify-content-between align-itemscenter">'+Titre+'<span class="badge badge-primary badge-pill">'+value2 +'</span></li></td><td><button type="button" class="btn btn-success" data-toggle="modal" data-target="#myModalAlbumUpdate"><i class="fas fa-user-edit"></i></button></td><td><button type="button" class="btn btn-danger" data-toggle="modal" data-target="#myModalAlbumDelete"><i class="fas fa-trash-alt"></i></button></td></tr>';
+					});
+				});
+				$("#albumList").html(dropDownList);
+			}
+		</script>
+	</head>
+	<body>
+		<div id="includedDialogFile"></div>
+	</body>
+</html>
